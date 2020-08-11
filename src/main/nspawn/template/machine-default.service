@@ -1,0 +1,94 @@
+
+# Machine Container with systemd-nspawn.
+
+[Unit]
+
+Description={{machine.machine_name()}}
+
+Documentation=https://github.com/random-python/nspawn
+
+PartOf=machines.target
+Before=machines.target
+After=network.target
+After=network-online.target
+Requires=network-online.target
+
+# Verify machine root overlay resources:
+{% for entry in machine.dependency_list() %}
+AssertPathExists={{entry}}
+{% endfor %}
+
+# Extra entries for [Unit] section:
+{% for entry in machine.unit_conf_list() %}
+{{entry}}
+{% endfor %}
+
+[Service]
+
+# Release machine root overlay mount:
+Environment="SYSTEMD_NSPAWN_LOCK=false"
+
+# Ensure host bind/overlay resources:
+{% for entry in machine.host_ensure_list() %}
+ExecStartPre={{entry}}
+{% endfor %}
+
+# Container resource create:
+{% for entry in machine.resource_create_list() %}
+ExecStartPre={{entry}}
+{% endfor %}
+
+# Container settings origin report:
+{% for entry in machine.nspawn_report_list() %}
+# {{entry}}
+{% endfor %}
+
+# Container instance launch:
+ExecStart={{machine.nspawn_exec_start()}} \
+--machine={{machine.machine_name()}} \
+--directory={{machine.machine_directory()}} \
+{% for entry in machine.nspawn_option_list() %}
+{{entry}}{{" \\" if not loop.last}}
+{% endfor %}
+
+# Container instance finish:
+ExecStop={{machine.nspawn_exec_stop()}}
+
+# Container resource delete:
+{% for entry in machine.resource_delete_list() %}
+ExecStopPost={{entry}}
+{% endfor %}
+
+# Machine name for journal:
+SyslogIdentifier={{machine.machine_name()}}
+
+Type=notify
+KillMode=mixed
+Slice=machine.slice
+Delegate=yes
+TasksMax=16384
+
+# Timing convention:
+RestartSec=3s
+TimeoutStartSec=15s
+TimeoutStopSec=15s
+
+WatchdogSec=3min
+
+# Return code 133 = 128 + 5 = <terminated by signal> + SIGTRAP
+SuccessExitStatus=133
+RestartForceExitStatus=133
+
+# Extra entries for [Service] section:
+{% for entry in machine.service_conf_list() %}
+{{entry}}
+{% endfor %}
+
+[Install]
+
+WantedBy=machines.target
+
+# Extra entries for [Install] section:
+{% for entry in machine.install_conf_list() %}
+{{entry}}
+{% endfor %}

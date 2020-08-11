@@ -1,0 +1,24 @@
+environment:
+  matrix:
+  - APPVEYOR_BUILD_WORKER_IMAGE: ubuntu1804
+    PYTHON_VERSION: 3.8
+    TOXENV: py38
+stack: python $(PYTHON_VERSION)
+clone_depth: 10
+branches:
+  only:
+  - master
+  - /develop/
+build: false
+install:
+- sudo apt-get -y update
+- sudo apt-get -y install attr systemd-container
+- pip install tox
+test_script:
+- echo $HOME
+- uname -a
+- ip addr
+- python --version
+- systemctl --version
+- getfattr --dump /home
+- tox

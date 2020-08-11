@@ -1,0 +1,85 @@
+
+# Machine Container with systemd-nspawn.
+
+[Unit]
+
+Description=ubuntu-base
+
+Documentation=https://github.com/random-python/nspawn
+
+PartOf=machines.target
+Before=machines.target
+After=network.target
+After=network-online.target
+Requires=network-online.target
+
+# Verify machine root overlay resources:
+AssertPathExists=/var/lib/nspawn/extract/localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz/
+AssertPathExists=/var/lib/nspawn/extract/cloud-images.ubuntu.com/minimal/releases/bionic/release/ubuntu-18.04-minimal-cloudimg-amd64-root.tar.xz/
+
+[Service]
+
+# Release machine root overlay mount.
+Environment="SYSTEMD_NSPAWN_LOCK=false"
+
+# Ensure host bind/overlay resources:
+ExecStartPre=/usr/bin/mkdir -p /root/.ssh
+ExecStartPre=/usr/bin/touch -a /root/.ssh/authorized_keys
+
+# Container resource create:
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/ubuntu-base
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/ubuntu-base/root
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/ubuntu-base/work
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/ubuntu-base/zero
+ExecStartPre=/usr/bin/mkdir -p /var/lib/machines/ubuntu-base
+ExecStartPre=/usr/bin/mount -t overlay -o lowerdir=/var/lib/nspawn/extract/localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz/:/var/lib/nspawn/extract/cloud-images.ubuntu.com/minimal/releases/bionic/release/ubuntu-18.04-minimal-cloudimg-amd64-root.tar.xz/:/var/lib/nspawn/runtime/ubuntu-base/zero,upperdir=/var/lib/nspawn/runtime/ubuntu-base/root,workdir=/var/lib/nspawn/runtime/ubuntu-base/work overlay /var/lib/machines/ubuntu-base
+
+# Container settings origin report:
+# --boot :: file://localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz
+# --quiet :: file://localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz
+# --keep-unit :: file://localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz
+# --register=yes :: file://localhost/tmp/nspawn/repo/ubuntu/base/bionic-18.04.tar.gz
+# --network-macvlan=wire0 :: file:///home/work/source/git/nspawn/demo/ubuntu/base/setup.py
+# --bind-ro=/root/.ssh/authorized_keys :: file:///home/work/source/git/nspawn/demo/ubuntu/base/setup.py
+
+# Container instance launch:
+ExecStart=/usr/bin/systemd-nspawn \
+--machine=ubuntu-base \
+--directory=/var/lib/machines/ubuntu-base \
+--boot \
+--quiet \
+--keep-unit \
+--register='yes' \
+--network-macvlan='wire0' \
+--bind-ro='/root/.ssh/authorized_keys'
+
+# Container instance finish:
+ExecStop=/usr/bin/true
+
+# Container resource delete:
+ExecStopPost=/usr/bin/umount /var/lib/machines/ubuntu-base
+ExecStopPost=/usr/bin/rm -r -f /var/lib/machines/ubuntu-base
+ExecStopPost=/usr/bin/rm -r -f /var/lib/nspawn/runtime/ubuntu-base
+
+# Machine name for journal:
+SyslogIdentifier=ubuntu-base
+    
+Type=notify
+KillMode=mixed
+Slice=machine.slice
+Delegate=yes
+TasksMax=16384
+
+RestartSec=3s
+TimeoutStartSec=5s
+TimeoutStopSec=5s
+
+WatchdogSec=3min
+
+# Return code 133 = 128 + 5 = <terminated by signal> + SIGTRAP
+SuccessExitStatus=133
+RestartForceExitStatus=133
+
+[Install]
+
+WantedBy=machines.target
