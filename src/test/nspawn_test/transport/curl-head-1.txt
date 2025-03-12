@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+Server: nginx
+Content-Type: application/octet-stream
+Last-Modified: Tue, 20 Aug 2019 10:30:44 GMT
+ETag: "5d5bcbd4-295ebd"
+Via: 1.1 varnish
+Content-Length: 2711229
+Accept-Ranges: bytes
+Date: Thu, 05 Sep 2019 14:01:15 GMT
+Via: 1.1 varnish
+X-Served-By: cache-jfk8129-JFK, cache-mdw17323-MDW
+X-Cache: HIT, HIT
+X-Cache-Hits: 1, 1
+X-Timer: S1567692076.516996,VS0,VE1
+Age: 161115
+Warning: 113 proxy (squid/3.5.27) This cache hit is still fresh and more than 1 day old
+X-Cache: HIT from proxy
+X-Cache-Lookup: HIT from proxy:3128
+Connection: keep-alive
+

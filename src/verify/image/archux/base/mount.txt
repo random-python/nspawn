@@ -1,0 +1,14 @@
+overlay on /var/lib/machines/a-nspawn-build-20190913-165840-107558 
+type overlay (
+rw,
+relatime,
+lowerdir=
+    /var/lib/nspawn/extract/a-nspawn-build-20190913-165840-107558/:
+    /var/lib/nspawn/extract/image/arch/base/2019-09-01.tar.gz/:
+    /var/lib/nspawn/extract/archive.archlinux.org/iso/2019.09.01/archlinux-bootstrap-2019.09.01-x86_64.tar.gz/root.x86_64:
+    /var/lib/nspawn/runtime/a-nspawn-build-20190913-165840-107558/zero,
+upperdir=
+    /var/lib/nspawn/runtime/a-nspawn-build-20190913-165840-107558/root,
+workdir=
+    /var/lib/nspawn/runtime/a-nspawn-build-20190913-165840-107558/work,
+    xino=off)

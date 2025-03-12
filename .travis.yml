@@ -1,0 +1,25 @@
+dist: xenial
+sudo: true
+language: python
+git:
+  depth: 10
+branches:
+  only:
+  - master
+  - /develop/
+matrix:
+  include:
+  - python: 3.8
+    env: TOXENV=py38
+install:
+- sudo apt-get -y update
+- sudo apt-get -y install attr pigz systemd-container
+- pip install tox devrepo
+script:
+- echo $HOME
+- uname -a
+- ip addr
+- python --version
+- systemctl --version
+- getfattr --dump /home
+- tox

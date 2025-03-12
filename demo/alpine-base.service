@@ -1,0 +1,87 @@
+
+# Machine Container with systemd-nspawn.
+
+[Unit]
+
+Description=alpine-base
+
+Documentation=https://github.com/random-python/nspawn
+
+PartOf=machines.target
+Before=machines.target
+After=network.target
+After=network-online.target
+Requires=network-online.target
+
+# Verify machine root overlay resources:
+AssertPathExists=/var/lib/nspawn/extract/localhost/tmp/nspawn/repo/alpine/base/default-3.9.4-x86_64.tar.gz/
+AssertPathExists=/var/lib/nspawn/extract/dl-cdn.alpinelinux.org/alpine/v3.9/releases/x86_64/alpine-minirootfs-3.9.4-x86_64.tar.gz/
+
+[Service]
+
+# Release machine root overlay mount.
+Environment="SYSTEMD_NSPAWN_LOCK=false"
+
+# Ensure host bind/overlay resources:
+ExecStartPre=/usr/bin/mkdir -p /root/.ssh
+ExecStartPre=/usr/bin/touch -a /root/.ssh/authorized_keys
+
+# Container resource create:
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/alpine-base
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/alpine-base/root
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/alpine-base/work
+ExecStartPre=/usr/bin/mkdir -p /var/lib/nspawn/runtime/alpine-base/zero
+ExecStartPre=/usr/bin/mkdir -p /var/lib/machines/alpine-base
+ExecStartPre=/usr/bin/mount -t overlay -o lowerdir=/var/lib/nspawn/extract/localhost/tmp/nspawn/repo/alpine/base/default-3.9.4-x86_64.tar.gz/:/var/lib/nspawn/extract/dl-cdn.alpinelinux.org/alpine/v3.9/releases/x86_64/alpine-minirootfs-3.9.4-x86_64.tar.gz/:/var/lib/nspawn/runtime/alpine-base/zero,upperdir=/var/lib/nspawn/runtime/alpine-base/root,workdir=/var/lib/nspawn/runtime/alpine-base/work overlay /var/lib/machines/alpine-base
+
+# Container settings origin report:
+# --kill-signal=SIGUSR1 :: file://localhost/tmp/nspawn/repo/alpine/base/default-3.9.4-x86_64.tar.gz
+# --boot :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+# --quiet :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+# --keep-unit :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+# --register=yes :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+# --network-macvlan=wire0 :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+# --bind-ro=/root/.ssh/authorized_keys :: file:///home/work/source/git/nspawn/demo/alpine/base/setup.py
+
+# Container instance launch:
+ExecStart=/usr/bin/systemd-nspawn \
+--machine=alpine-base \
+--directory=/var/lib/machines/alpine-base \
+--kill-signal='SIGUSR1' \
+--boot \
+--quiet \
+--keep-unit \
+--register='yes' \
+--network-macvlan='wire0' \
+--bind-ro='/root/.ssh/authorized_keys'
+
+# Container instance finish:
+ExecStop=/usr/bin/true
+
+# Container resource delete:
+ExecStopPost=/usr/bin/umount /var/lib/machines/alpine-base
+ExecStopPost=/usr/bin/rm -r -f /var/lib/machines/alpine-base
+ExecStopPost=/usr/bin/rm -r -f /var/lib/nspawn/runtime/alpine-base
+
+# Machine name for journal:
+SyslogIdentifier=alpine-base
+    
+Type=notify
+KillMode=mixed
+Slice=machine.slice
+Delegate=yes
+TasksMax=16384
+
+RestartSec=3s
+TimeoutStartSec=5s
+TimeoutStopSec=5s
+
+WatchdogSec=3min
+
+# Return code 133 = 128 + 5 = <terminated by signal> + SIGTRAP
+SuccessExitStatus=133
+RestartForceExitStatus=133
+
+[Install]
+
+WantedBy=machines.target

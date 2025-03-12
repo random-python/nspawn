@@ -1,0 +1,6 @@
+#
+# https://wiki.alpinelinux.org/wiki/Configure_Networking
+#
+
+auto lo
+iface lo inet loopback

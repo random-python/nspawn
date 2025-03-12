@@ -1,0 +1,2 @@
+
+/usr/bin/sudo -u root /usr/bin/nsenter -m -u -i -n -p -t10469 -r/var/lib/machines/alpa-base -w/var/lib/machines/alpa-base /usr/bin/env -i TERM=xterm sh

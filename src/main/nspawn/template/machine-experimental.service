@@ -1,0 +1,81 @@
+
+# machine container
+
+[Unit]
+Description={{machine.machine_name()}}
+
+PartOf=machines.target
+Before=machines.target
+
+After=network-online.target
+Requires=network-online.target
+
+#After=network.target systemd-networkd.service systemd-resolved.service
+#RequiresMountsFor=/var/lib/machines
+
+# Ensure overlay resources:
+{% for entry in machine.dependency_list() %}
+AssertPathExists={{entry}}
+{% endfor %}
+
+[Service]
+
+# Release overlay mount.
+Environment="SYSTEMD_NSPAWN_LOCK=false"
+
+# Container resource create:
+{% for entry in machine.resource_create_list() %}
+ExecStartPre={{entry}}
+{% endfor %}
+
+# Container instance launch:
+ExecStart={{machine.nspawn_exec_start()}} \
+--machine={{machine.machine_name()}} \
+--directory={{machine.machine_directory()}} \
+{% for entry in machine.nspawn_option_list() %}
+{{entry}}{{" \\" if not loop.last}}
+{% endfor %}
+
+ExecStop={{machine.nspawn_exec_stop()}}
+
+# Container resource delete:
+{% for entry in machine.resource_delete_list() %}
+ExecStopPost={{entry}}
+{% endfor %}
+    
+KillMode=mixed
+Type=notify
+Slice=machine.slice
+Delegate=yes
+TasksMax=16384
+
+RestartSec=1s
+TimeoutStartSec=3s
+TimeoutStopSec=3s
+
+WatchdogSec=3min
+
+SuccessExitStatus=133
+RestartForceExitStatus=133
+
+# Enforce a strict device policy, similar to the one nspawn configures when it
+# allocates its own scope unit. Make sure to keep these policies in sync if you
+# change them!
+DevicePolicy=closed
+DeviceAllow=/dev/net/tun rwm
+DeviceAllow=char-pts rw
+
+# nspawn itself needs access to /dev/loop-control and /dev/loop, to implement
+# the --image= option. Add these here, too.
+DeviceAllow=/dev/loop-control rw
+DeviceAllow=block-loop rw
+DeviceAllow=block-blkext rw
+
+# nspawn can set up LUKS encrypted loopback files, in which case it needs
+# access to /dev/mapper/control and the block devices /dev/mapper/*.
+DeviceAllow=/dev/mapper/control rw
+DeviceAllow=block-device-mapper rw
+
+[Install]
+
+WantedBy=machines.target
